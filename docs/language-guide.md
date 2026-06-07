@@ -184,8 +184,23 @@ fn divmod(a int, b int) (int, int) {
 let q, r = divmod(17, 5)
 ```
 
-**Not yet supported:** anonymous function expressions and variadic parameters.
-Use named functions, including with `spawn`.
+### Variadic Parameters
+
+A function can accept a variable number of arguments of the same type by using the `...` syntax prefix on the parameter type. Inside the function, the variadic parameter behaves like a slice:
+
+```nv
+fn sum(nums ...int) int {
+    let total = 0
+    for n in nums {
+        total += n
+    }
+    ret total
+}
+
+let result = sum(1, 2, 3) // result is 6
+```
+
+**Not yet supported:** anonymous function expressions (closures). Use named functions, including with `spawn`.
 
 ## Control flow
 
@@ -473,13 +488,13 @@ in this build. They are listed in one place so you can plan around them:
 
 - **Limited compile-time checking.** The type checker reports undefined
   identifiers, unused variables (a hard error per the spec), assignment to a
-  `const`, wrong argument counts for declared functions, unknown type names, and
-  misuse of the `!` suffix. It does **not** yet check numeric/type compatibility
-  (all numbers mix freely), so a genuine type mismatch still surfaces as a Lua
-  runtime error.
+  `const`, wrong argument counts for declared functions, unknown type names,
+  arity of primitive type conversions, and misuse of the `!` suffix. It does
+  **not** yet check numeric/type compatibility (all numbers mix freely), so a
+  genuine type mismatch still surfaces as a Lua runtime error.
 - **0-based indexing.** Collection indices are currently 1-based (Lua tables).
 - **`match`** expressions are not parsed.
-- **Anonymous functions** and **variadic parameters** are not supported.
+- **Anonymous functions** are not supported.
 - **Embedded struct field promotion** is not supported.
 - **String `+=`** lowers to numeric addition; build strings with interpolation.
 - **Nested double-quoted strings inside interpolation** do not parse.

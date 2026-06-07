@@ -1,0 +1,23 @@
+// main.nv: entry point demonstrating Novel's module system.
+// Run with: bin/novel run examples/modules/main.nv
+//
+// `import geometry` pulls in the sibling geometry.nv file. The module name is
+// resolved to a .nv file next to this one. The module binds to the name
+// `geometry`, and its `pub` functions are reached with dot-calls.
+//
+// At build time the compiler bundles every reachable .nv file into one Lua
+// program, so there is nothing to install or link separately.
+
+import std.io
+import geometry
+
+fn main() {
+    let r = 2.0
+    io.println($"circle area (r={r})      = {geometry.circleArea(r)}")
+    io.println($"circle circumference     = {geometry.circumference(r)}")
+    io.println($"square area (side=3)     = {geometry.squareArea(3.0)}")
+
+    // Construct a struct type exported by geometry, then call its method.
+    let box = geometry.Rect{ width: 4.0, height: 2.5 }
+    io.println($"rect area (4 x 2.5)      = {box.area()}")
+}

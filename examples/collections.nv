@@ -1,0 +1,41 @@
+// collections.nv: slices and maps.
+// Run with: bin/novel run examples/collections.nv
+
+import std.io
+
+fn main() {
+    // Slices are dynamic arrays. append mutates in place; len returns the size.
+    let nums = [4, 8, 15, 16]
+    nums.append(23)
+    nums.append(42)
+    io.println($"slice has {nums.len()} elements")
+
+    // Range over a slice. The first variable is the index, the second the value.
+    // Note: indices are 1-based in this build of Novel.
+    let total = 0
+    for i, v in nums {
+        io.println($"  nums[{i}] = {v}")
+        total += v
+    }
+    io.println($"sum = {total}")
+
+    // Range with a single variable binds the element, not the index.
+    let evens = 0
+    for v in nums {
+        if v % 2 == 0 {
+            evens += 1
+        }
+    }
+    io.println($"{evens} of them are even")
+
+    // Maps associate keys with values. Index to read or write.
+    let ages = map[string]int{
+        "alice": 30,
+        "bob": 25,
+    }
+    ages["carol"] = 28
+
+    let a = ages["alice"]
+    let c = ages["carol"]
+    io.println($"alice is {a}, carol is {c}")
+}

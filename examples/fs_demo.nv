@@ -1,0 +1,71 @@
+// fs_demo.nv: file system operations standard library example.
+// Run with: bin/novel run examples/fs_demo.nv
+
+import std.io
+import std.fs
+
+fn main() {
+    let testDir = "fs_demo_dir"
+    let testFile = "fs_demo_dir/hello.txt"
+
+    io.println("Cleaning up old test directories...")
+    let ok1, err1 = fs.removeAll(testDir)
+    if !ok1 {
+        io.println($"Failed to clean up: {err1.msg}")
+        ret
+    }
+
+    io.println($"Creating directory: {testDir}")
+    let ok2, err2 = fs.mkdir(testDir)
+    if !ok2 {
+        io.println($"Failed to mkdir: {err2.msg}")
+        ret
+    }
+
+    io.println($"Writing file: {testFile}")
+    let ok3, err3 = io.writeFile(testFile, "Hello, Novel filesystem!")
+    if !ok3 {
+        io.println($"Failed to write file: {err3.msg}")
+        ret
+    }
+
+    // Verify existence
+    if fs.exists(testFile) {
+        io.println("File exists: true")
+    }
+
+    // Retrieve file metadata
+    let info, err4 = fs.stat(testFile)
+    if err4 != nil {
+        io.println($"Failed to stat: {err4.msg}")
+        ret
+    }
+    io.println($"File Name: {info.name}")
+    io.println($"File Size: {info.size} bytes")
+    if info.is_dir {
+        io.println("Is Directory: true")
+    } else {
+        io.println("Is Directory: false")
+    }
+    io.println($"Mod Time: {info.mod_time}")
+
+    // List directory contents
+    io.println($"Listing directory contents of: {testDir}")
+    let files, err5 = fs.readDir(testDir)
+    if err5 != nil {
+        io.println($"Failed to readDir: {err5.msg}")
+        ret
+    }
+    for name in files {
+        io.println($"- {name}")
+    }
+
+    // Clean up
+    io.println("Cleaning up test directories...")
+    let ok6, err6 = fs.removeAll(testDir)
+    if !ok6 {
+        io.println($"Failed to final clean up: {err6.msg}")
+        ret
+    }
+    io.println("Done!")
+}

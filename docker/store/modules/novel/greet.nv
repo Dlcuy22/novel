@@ -1,0 +1,13 @@
+// greet.nv: a global Novel module, installed at $NVLPATH/modules/novel/greet.nv.
+// Imported by bare name ("greet") and bundled into the program at compile time.
+// Only pub declarations are visible to importers.
+
+const exclaim = "!"
+
+pub fn hello(name string) string {
+    ret $"hello, {name}{exclaim}"
+}
+
+pub fn shout(msg string) string {
+    ret $">> {msg} <<"
+}

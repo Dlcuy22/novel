@@ -1,0 +1,47 @@
+// wayland_demo.nv: demonstration of Wayland client window spawning and text drawing.
+// Run with: bin/novel run examples/wayland_demo.nv
+
+import std.io
+import std.wl_ui as wl
+import std.time
+
+fn main() {
+    io.println("Initializing Wayland client display connection...")
+    
+    // Spawns a 640x480 window with a title
+    let win = wl.createWindow("Novel Wayland Demo", 640, 480)
+    if win == nil {
+        io.println("Could not open Wayland display; check if WAYLAND_DISPLAY is active")
+        ret
+    }
+    
+    io.println("Window mapped successfully; painting text...")
+    
+    // Clear screen with a dark slate background color: 0x0f172a (988970)
+    wl.clear(win, 988970)
+    
+    // Render lines of text in white (16777215) and light grey (9741240)
+    wl.drawText(win, 40, 40, "Hello Wayland from Novel!", 16777215)
+    wl.drawText(win, 40, 70, "Spawning native windows using FFI and C helper", 9741240)
+    wl.drawText(win, 40, 100, "Drawing text using an embedded 8x8 font bitmap", 9741240)
+    wl.drawText(win, 40, 150, "Cooperative loop yields execution via time.sleep", 9741240)
+    wl.drawText(win, 40, 200, "Close the window or press Ctrl+C in terminal to exit", 16777215)
+    
+    // Flush updates to the compositor
+    wl.present(win)
+    
+    io.println("Entering Wayland event dispatch loop...")
+    for {
+        let status int = wl.dispatch(win)
+        if status < 0 {
+            io.println("Window closed or display disconnected")
+            break
+        }
+        
+        // Yield to the cooperative thread scheduler at ~60fps
+        time.sleep(0.016)
+    }
+    
+    wl.close(win)
+    io.println("Wayland display resources released; shutdown complete.")
+}

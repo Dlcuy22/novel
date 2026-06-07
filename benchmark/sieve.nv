@@ -1,0 +1,48 @@
+// sieve.nv: Sieve of Eratosthenes over a large slice, repeated.
+// Run with: bin/novel run benchmark/sieve.nv
+//
+// Stresses slice allocation, indexed reads/writes, and the inner marking loop.
+// The sieve is rebuilt several times so total work is large enough for steady
+// state. The checksum is the prime count of the final pass.
+
+import std.io
+import std.time
+
+const limit = 1000000
+
+// countPrimes builds a fresh sieve up to limit and returns the prime count.
+// Indices are 1-based, so slot i represents the number i.
+fn countPrimes() int {
+    let isComposite = []int{}
+    for i = 1; i <= limit; i++ {
+        isComposite.append(0)
+    }
+
+    let count = 0
+    for n = 2; n <= limit; n++ {
+        if isComposite[n] == 0 {
+            count += 1
+            let m = n + n
+            for m <= limit {
+                isComposite[m] = 1
+                m += n
+            }
+        }
+    }
+    ret count
+}
+
+fn main() {
+    // Warmup pass (also exercises allocation paths).
+    countPrimes()
+
+    const passes = 5
+    let t0 = time.now()
+    let primes = 0
+    for p = 1; p <= passes; p++ {
+        primes = countPrimes()
+    }
+    let dt = time.now() - t0
+
+    io.println($"sieve\t{dt * 1000.0}\t{primes}")
+}

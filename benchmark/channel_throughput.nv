@@ -1,0 +1,48 @@
+// channel_throughput.nv: raw producer/consumer channel throughput.
+// Run with: bin/novel run benchmark/channel_throughput.nv
+//
+// Stresses the scheduler and channel send/recv path by pushing many values
+// through a buffered channel from one green thread to another. A buffer larger
+// than 1 lets the producer run ahead, so this measures steady-state send/recv
+// cost rather than rendezvous latency. The checksum is the summed payload.
+
+import std.io
+import std.time
+
+const messages = 2000000
+
+fn produce(out chan<int>, count int) {
+    for i = 1; i <= count; i++ {
+        send(out, i)
+    }
+    send(out, -1)
+}
+
+// consume reads until the sentinel and returns the bounded running sum.
+fn consume(input chan<int>) int {
+    let acc = 0
+    for {
+        let v = recv(input)
+        if v < 0 {
+            ret acc
+        }
+        acc = (acc + v) % 1000000007
+    }
+}
+
+fn run(count int) int {
+    let ch = chan<int>(256)
+    spawn produce(ch, count)
+    ret consume(ch)
+}
+
+fn main() {
+    // Warmup so the send/recv sites are compiled before timing.
+    run(100000)
+
+    let t0 = time.now()
+    let checksum = run(messages)
+    let dt = time.now() - t0
+
+    io.println($"channel_throughput\t{dt * 1000.0}\t{checksum}")
+}

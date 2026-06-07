@@ -1,0 +1,36 @@
+// static_server.nv: a static file server example using std.fs and std.http.
+// Run with: bin/novel run examples/static_server.nv
+// Then try: curl http://127.0.0.1:8081/README.md
+
+import std.io
+import std.http
+import std.fs
+import std.time
+
+fn handle(req any) any {
+    if req.path == "/" {
+        ret http.serveFile("examples/page/index.html")
+    }
+
+    // Serve specific files from the current directory.
+    if req.path == "/README.md" {
+        ret http.serveFile("README.md")
+    }
+    if req.path == "/examples/fs_demo.nv" {
+        ret http.serveFile("examples/fs_demo.nv")
+    }
+
+    ret http.response(404, "File not found\n")
+}
+
+fn main() {
+    let ln = http.serve("127.0.0.1", 8081, handle)
+    if ln == nil {
+        io.eprintln("failed to bind :8081")
+        ret
+    }
+    io.println("listening on http://127.0.0.1:8081  (Ctrl-C to stop)")
+    for {
+        time.sleep(3600.0)
+    }
+}

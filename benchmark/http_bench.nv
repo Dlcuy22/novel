@@ -1,0 +1,78 @@
+// http_bench.nv: HTTP server performance benchmark.
+// Run with: bin/novel run benchmark/http_bench.nv
+
+import std.io
+import std.http
+import std.time
+
+fn handle(req any) any {
+    ret http.response(200, "OK\n")
+}
+
+// client sends a number of requests to the server.
+fn client(count int, url string, done chan<bool>) {
+    for i = 1; i <= count; i++ {
+        let resp, err = http.get(url)
+        if err != nil {
+            io.println($"Client error: {err.msg}")
+            send(done, false)
+            ret
+        }
+        if resp.status != 200 {
+            io.println($"Unexpected response status: {resp.status}")
+            send(done, false)
+            ret
+        }
+    }
+    send(done, true)
+}
+
+fn main() {
+    const port = 49152
+    let url = $"http://127.0.0.1:{port}/"
+
+    // Start server
+    let ln = http.serve("127.0.0.1", port, handle)
+    if ln == nil {
+        io.eprintln("Failed to start server")
+        ret
+    }
+
+    // Warmup
+    let warmupDone = chan<bool>(1)
+    spawn client(100, url, warmupDone)
+    recv(warmupDone)
+
+    // Benchmark: run concurrent clients to perform requests
+    const concurrency = 4
+    const reqsPerClient = 250
+    const totalReqs = concurrency * reqsPerClient
+
+    let done = chan<bool>(concurrency)
+    
+    let t0 = time.now()
+    for c = 1; c <= concurrency; c++ {
+        spawn client(reqsPerClient, url, done)
+    }
+
+    // Wait for all clients to finish
+    let allOk = true
+    for c = 1; c <= concurrency; c++ {
+        let ok = recv(done)
+        if !ok {
+            allOk = false
+        }
+    }
+    let dt = time.now() - t0
+
+    // Cleanup
+    ln.close()
+
+    if !allOk {
+        io.eprintln("Benchmark failed due to client errors")
+        ret
+    }
+
+    let rps = totalReqs / dt
+    io.println($"http_bench\t{dt * 1000.0} ms\t{totalReqs} reqs\t{rps} req/sec")
+}

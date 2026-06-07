@@ -1,0 +1,31 @@
+// basics.nv: variables, functions, and string interpolation.
+// Run with: bin/novel run examples/basics.nv
+
+import std.io
+
+// A constant. Use const for values that never change, let for the rest.
+const greeting = "Novel"
+
+// Functions declare parameter types after the name, and the return type after
+// the parameter list (no arrow, no colon).
+fn square(n int) int {
+    ret n * n
+}
+
+// Multiple return values are written as a parenthesized tuple.
+fn divmod(a int, b int) (int, int) {
+    ret a / b, a % b
+}
+
+fn main() {
+    // let is mutable; types are inferred but can be written explicitly.
+    let name = greeting
+    let count int = 3
+
+    io.println($"hello from {name}")
+    io.println($"{count} squared is {square(count)}")
+
+    // Destructure a multi-return into several names at once.
+    let q, r = divmod(17, 5)
+    io.println($"17 / 5 = {q} remainder {r}")
+}

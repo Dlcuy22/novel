@@ -1,0 +1,44 @@
+// map_ops.nv: heavy map insert and lookup.
+// Run with: bin/novel run benchmark/map_ops.nv
+//
+// Stresses the table-as-hashmap path: many writes followed by many reads with
+// a mix of hits and misses. The checksum is the sum of all successful lookups,
+// which is exact and stable across codegen changes.
+
+import std.io
+import std.time
+
+const keys = 200000
+
+// fill inserts keys 0..keys-1, each mapped to (k * 2 + 1).
+fn fill() map[int]int {
+    let m = map[int]int{}
+    for k = 0; k < keys; k++ {
+        m[k] = k * 2 + 1
+    }
+    ret m
+}
+
+// probe reads every key several times and accumulates the values found.
+fn probe(m map[int]int, rounds int) int {
+    let acc = 0
+    for r = 1; r <= rounds; r++ {
+        for k = 0; k < keys; k++ {
+            acc = (acc + m[k]) % 1000000007
+        }
+    }
+    ret acc
+}
+
+fn main() {
+    // Warmup: build and probe a smaller workload once.
+    let warm = fill()
+    probe(warm, 1)
+
+    let t0 = time.now()
+    let m = fill()
+    let checksum = probe(m, 5)
+    let dt = time.now() - t0
+
+    io.println($"map_ops\t{dt * 1000.0}\t{checksum}")
+}

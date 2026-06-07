@@ -1,0 +1,49 @@
+// errors.nv: Novel's explicit error-return pattern.
+// Run with: bin/novel run examples/errors.nv
+
+import std.io
+
+// By convention a fallible function returns (T, error). Return a real error
+// value with error("..."), or nil to signal success.
+fn safeDivide(a int, b int) (int, error) {
+    if b == 0 {
+        ret 0, error("division by zero")
+    }
+    ret a / b, nil
+}
+
+// Errors are plain values: check them with an explicit if, no exceptions.
+fn describe(a int, b int) {
+    let q, err = safeDivide(a, b)
+    if err != nil {
+        io.println($"{a} / {b} failed: {err.msg}")
+        ret
+    }
+    io.println($"{a} / {b} = {q}")
+}
+
+// The `!` suffix propagates an error to the caller automatically: if the call
+// fails, the function returns early with that error. The caller must itself
+// return (T, error). Here halveThenDivide fails fast if either step errors.
+fn halveThenDivide(a int, b int) (int, error) {
+    let half = safeDivide(a, 2)!     // early-returns (0, err) if a/2 fails
+    let result = safeDivide(half, b)!
+    ret result, nil
+}
+
+fn main() {
+    describe(10, 2)
+    describe(7, 0)
+    describe(20, 4)
+
+    // `!` propagation: the first call succeeds, the second divides by zero and
+    // the error bubbles straight out of halveThenDivide.
+    let ok, err1 = halveThenDivide(40, 2)
+    if err1 == nil {
+        io.println($"halveThenDivide(40, 2) = {ok}")
+    }
+    let _, err2 = halveThenDivide(40, 0)
+    if err2 != nil {
+        io.println($"halveThenDivide(40, 0) failed: {err2.msg}")
+    }
+}

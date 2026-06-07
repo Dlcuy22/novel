@@ -1,0 +1,107 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Novel",
+  "scopeName": "source.novel",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#types" },
+    { "include": "#functions" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.novel",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.novel",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.novel",
+          "match": "\\b(if|elif|else|for|break|continue|ret|match|in|spawn)\\b"
+        },
+        {
+          "name": "keyword.declaration.novel",
+          "match": "\\b(fn|let|const|type|struct|import|pub|as)\\b"
+        },
+        {
+          "name": "keyword.other.channel.novel",
+          "match": "\\b(chan|send|recv)\\b"
+        },
+        {
+          "name": "constant.language.novel",
+          "match": "\\b(true|false|nil)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "support.type.primitive.novel",
+          "match": "\\b(int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|bool|string|byte|rune|error|any)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.interpolated.novel",
+          "begin": "\\$\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "meta.interpolation.novel",
+              "begin": "\\{",
+              "end": "\\}",
+              "patterns": [{ "include": "$self" }]
+            },
+            { "name": "constant.character.escape.novel", "match": "\\\\." }
+          ]
+        },
+        {
+          "name": "string.quoted.double.novel",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.novel", "match": "\\\\." }
+          ]
+        },
+        {
+          "name": "string.quoted.raw.novel",
+          "begin": "`",
+          "end": "`"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.novel",
+          "match": "\\b[0-9]+\\.[0-9]+(f32|f64)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.novel",
+          "match": "\\b[0-9]+(u|i8|i16|i32|i64|u8|u16|u32|u64)?\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "entity.name.function.novel",
+          "match": "(?<=fn\\s)([a-zA-Z_][a-zA-Z0-9_]*)"
+        }
+      ]
+    }
+  }
+}

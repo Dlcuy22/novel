@@ -1,0 +1,18 @@
+// fizzbuzz.nv: the classic, using if/elif/else and a classic for loop.
+// Run with: bin/novel run examples/fizzbuzz.nv
+
+import std.io
+
+fn main() {
+    for n = 1; n <= 20; n++ {
+        if n % 15 == 0 {
+            io.println("FizzBuzz")
+        } elif n % 3 == 0 {
+            io.println("Fizz")
+        } elif n % 5 == 0 {
+            io.println("Buzz")
+        } else {
+            io.println($"{n}")
+        }
+    }
+}

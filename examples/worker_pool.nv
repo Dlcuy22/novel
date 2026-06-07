@@ -1,0 +1,47 @@
+// worker_pool.nv: fan-out work across several green threads, fan-in results.
+// Run with: bin/novel run examples/worker_pool.nv
+
+import std.io
+
+// Each worker pulls jobs off a shared channel until it sees the -1 sentinel,
+// pushing one result per job onto the results channel.
+fn worker(id int, jobs chan<int>, results chan<int>) {
+    for {
+        let job = recv(jobs)
+        if job < 0 {
+            ret
+        }
+        // Pretend the work is "sum 1..job".
+        let acc = 0
+        for i = 1; i <= job; i++ {
+            acc += i
+        }
+        send(results, acc)
+    }
+}
+
+fn main() {
+    let jobs = chan<int>(16)
+    let results = chan<int>(16)
+
+    const workers = 3
+    for i = 1; i <= workers; i++ {
+        spawn worker(i, jobs, results)
+    }
+
+    // Queue 6 jobs, then one sentinel per worker so they all exit.
+    const jobCount = 6
+    for j = 1; j <= jobCount; j++ {
+        send(jobs, j)
+    }
+    for i = 1; i <= workers; i++ {
+        send(jobs, -1)
+    }
+
+    // Collect exactly one result per job. Order is not guaranteed.
+    let total = 0
+    for i = 1; i <= jobCount; i++ {
+        total += recv(results)
+    }
+    io.println($"combined result = {total}")
+}

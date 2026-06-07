@@ -1,0 +1,29 @@
+import std.io
+
+type Task struct {
+    pub id   int
+    pub name string
+}
+
+fn runTask(t Task, results chan<string>) {
+    send(results, $"task {t.id}: {t.name} done")
+}
+
+fn main() {
+    let tasks = []Task{
+        Task{ id: 1, name: "parse" },
+        Task{ id: 2, name: "compile" },
+        Task{ id: 3, name: "link" },
+    }
+
+    let results = chan<string>(tasks.len())
+
+    for _, t in tasks {
+        spawn runTask(t, results)
+    }
+
+    for i = 0; i < tasks.len(); i++ {
+        let msg = recv(results)
+        io.println(msg)
+    }
+}

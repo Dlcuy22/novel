@@ -1,0 +1,35 @@
+// exec_demo.nv: executing external processes standard library example.
+// Run with: bin/novel run examples/exec_demo.nv
+
+import std.io
+import std.exec
+import std.os
+
+fn main() {
+    let name = "echo"
+    let args = ["Hello, Novel subprocess!"]
+    
+    if os.platform() == "windows" {
+        name = "cmd"
+        args = ["/c", "echo Hello, Novel subprocess!"]
+    }
+
+    io.println($"Spawning process: {name}")
+    let cmd = exec.command(name, args)
+    
+    // 1) Test output capturing
+    let out, err = cmd.output()
+    if err != nil {
+        io.println($"Failed to run output: {err.msg}")
+        ret
+    }
+    io.println($"Captured output: {out}")
+    
+    // 2) Test plain execution and exit status
+    let code, err2 = cmd.run()
+    if err2 != nil {
+        io.println($"Failed to run: {err2.msg}")
+        ret
+    }
+    io.println($"Process exit code: {code}")
+}

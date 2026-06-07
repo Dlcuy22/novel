@@ -1,0 +1,137 @@
+// game_of_life.nv: Conway's Game of Life, a small terminal simulation.
+// Run with: bin/novel run examples/game_of_life.nv
+//
+// Demonstrates nested slices, helper functions, nested loops, and building
+// output strings with interpolation. The grid is row-major [][]int where 1 is
+// a live cell and 0 is dead. Indices are 1-based in this build of Novel, so
+// loops run from 1 to the dimension and neighbor math accounts for that.
+
+import std.io
+
+const width  = 10
+const height = 6
+
+// liveAt returns 1 if the cell at (row, col) is alive, 0 if dead or off-grid.
+// Out-of-bounds neighbors count as dead, which gives the grid hard edges.
+fn liveAt(grid [][]int, row int, col int) int {
+    if row < 1 {
+        ret 0
+    }
+    if row > height {
+        ret 0
+    }
+    if col < 1 {
+        ret 0
+    }
+    if col > width {
+        ret 0
+    }
+    let r = grid[row]
+    ret r[col]
+}
+
+// neighbors counts the live cells in the eight squares around (row, col).
+fn neighbors(grid [][]int, row int, col int) int {
+    let count = 0
+    for dr = -1; dr <= 1; dr++ {
+        for dc = -1; dc <= 1; dc++ {
+            if dr == 0 {
+                if dc == 0 {
+                    continue
+                }
+            }
+            count += liveAt(grid, row + dr, col + dc)
+        }
+    }
+    ret count
+}
+
+// step computes the next generation from the current grid.
+fn step(grid [][]int) [][]int {
+    let next = [][]int{}
+    for row = 1; row <= height; row++ {
+        let line = []int{}
+        for col = 1; col <= width; col++ {
+            let n = neighbors(grid, row, col)
+            let alive = liveAt(grid, row, col)
+            let cell = 0
+            // A live cell with 2 or 3 neighbors survives; a dead cell with
+            // exactly 3 neighbors is born. Everything else is dead.
+            if alive == 1 {
+                if n == 2 {
+                    cell = 1
+                }
+                if n == 3 {
+                    cell = 1
+                }
+            } else {
+                if n == 3 {
+                    cell = 1
+                }
+            }
+            line.append(cell)
+        }
+        next.append(line)
+    }
+    ret next
+}
+
+// render prints the grid using '#' for live cells and '.' for dead ones.
+fn render(grid [][]int, gen int) {
+    io.println($"-- generation {gen} --")
+    for row = 1; row <= height; row++ {
+        let r = grid[row]
+        let line = ""
+        for col = 1; col <= width; col++ {
+            if r[col] == 1 {
+                line = $"{line}#"
+            } else {
+                line = $"{line}."
+            }
+        }
+        io.println(line)
+    }
+}
+
+fn dongotambah(a int, b int) int {
+    ret a + b
+}
+
+// emptyGrid builds a height x width grid of dead cells.
+fn emptyGrid() [][]int {
+    let grid = [][]int{}
+    for row = 1; row <= height; row++ {
+        let line = []int{}
+        for col = 1; col <= width; col++ {
+            line.append(0)
+        }
+        grid.append(line)
+    }
+    ret grid
+}
+
+// setCell turns the cell at (row, col) on. Grids are mutable tables, so this
+// updates the slice in place.
+fn setCell(grid [][]int, row int, col int) {
+    let r = grid[row]
+    r[col] = 1
+}
+
+fn main() {
+    let grid = emptyGrid()
+
+    // Seed a glider near the top-left corner. It walks down and to the right.
+    setCell(grid, 1, 2)
+    setCell(grid, 2, 3)
+    setCell(grid, 3, 1)
+    setCell(grid, 3, 2)
+    setCell(grid, 3, 3)
+
+    let gen = 0
+    render(grid, gen)
+    for gen < 4 {
+        grid = step(grid)
+        gen += 1
+        render(grid, gen)
+    }
+}

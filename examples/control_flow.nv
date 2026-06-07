@@ -1,0 +1,53 @@
+// control_flow.nv: if/elif/else and the four for-loop forms.
+// Run with: bin/novel run examples/control_flow.nv
+
+import std.io
+
+fn sign(n int) string {
+    if n > 0 {
+        ret "positive"
+    } elif n < 0 {
+        ret "negative"
+    } else {
+        ret "zero"
+    }
+}
+
+fn main() {
+    io.println($"sign(-4) = {sign(-4)}")
+    io.println($"sign(0)  = {sign(0)}")
+    io.println($"sign(7)  = {sign(7)}")
+
+    // Classic C-style for. The loop variable is scoped to the loop.
+    let sum = 0
+    for i = 1; i <= 5; i++ {
+        sum += i
+    }
+    io.println($"1..5 sum = {sum}")
+
+    // While-style for: a single condition, no init or post.
+    let n = 16
+    let steps = 0
+    for n > 1 {
+        if n % 2 == 0 {
+            n = n / 2
+        } else {
+            n = n * 3 + 1
+        }
+        steps += 1
+    }
+    io.println($"collatz(16) took {steps} steps")
+
+    // Infinite for with break, and continue to skip iterations.
+    let printed = 0
+    for i = 0; i < 10; i++ {
+        if i % 3 != 0 {
+            continue
+        }
+        io.println($"multiple of 3: {i}")
+        printed += 1
+        if printed == 3 {
+            break
+        }
+    }
+}

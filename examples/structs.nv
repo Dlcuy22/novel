@@ -1,0 +1,39 @@
+// structs.nv: struct types, methods, and composition.
+// Run with: bin/novel run examples/structs.nv
+
+import std.io
+
+// A struct groups named fields. pub exports a field; fields are private
+// by default.
+type Rect struct {
+    pub width  float64
+    pub height float64
+}
+
+// Methods attach to a type via a receiver written before the name.
+fn (r Rect) area() float64 {
+    ret r.width * r.height
+}
+
+fn (r Rect) perimeter() float64 {
+    ret 2.0 * (r.width + r.height)
+}
+
+// Composition: hold another struct as a named field and reach through it.
+type Labeled struct {
+    label string
+    rect  Rect
+}
+
+fn main() {
+    // Construct with named fields (order-independent) ...
+    let a = Rect{ width: 3.0, height: 4.0 }
+    io.println($"area = {a.area()}, perimeter = {a.perimeter()}")
+
+    // ... or positionally, in declaration order.
+    let b = Rect{ 2.0, 5.0 }
+    io.println($"area = {b.area()}")
+
+    let tile = Labeled{ label: "floor", rect: Rect{ width: 10.0, height: 2.0 } }
+    io.println($"{tile.label} area = {tile.rect.area()}")
+}

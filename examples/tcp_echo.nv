@@ -1,0 +1,60 @@
+// tcp_echo.nv: a self-contained TCP echo server + client over std.net.
+// Run with: bin/novel run examples/tcp_echo.nv
+//
+// Demonstrates the async scheduler: the server and client both run as green
+// threads in the same program. The server handles each connection in its own
+// spawned thread, so multiple clients are served concurrently.
+
+import std.io
+import std.net
+import std.time
+
+fn serve(ln any) {
+    for {
+        let conn, err = ln.accept()
+        if err != nil {
+            ret
+        }
+        spawn handle(conn)
+    }
+}
+
+fn handle(conn any) {
+    for {
+        let line, err = conn.readLine()
+        if err != nil || line == nil {
+            conn.close()
+            ret
+        }
+        conn.write($"echo: {line}\n")
+    }
+}
+
+fn client() {
+    time.sleep(0.02)
+    let conn, err = net.dialTCP("127.0.0.1", 47900)
+    if err != nil {
+        io.eprintln($"dial failed: {err.msg}")
+        ret
+    }
+    conn.write("hello\n")
+    let reply1, _ = conn.readLine()
+    io.println(reply1)
+    conn.write("world\n")
+    let reply2, _ = conn.readLine()
+    io.println(reply2)
+    conn.close()
+}
+
+fn main() {
+    let ln, err = net.listenTCP("127.0.0.1", 47900)
+    if err != nil {
+        io.eprintln($"listen failed: {err.msg}")
+        ret
+    }
+    spawn serve(ln)
+    spawn client()
+    // Let the exchange finish, then close the listener so the program drains.
+    time.sleep(0.1)
+    ln.close()
+}

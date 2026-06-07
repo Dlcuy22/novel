@@ -1,0 +1,31 @@
+// channels.nv: closing a channel and the two-value recv.
+// Run with: bin/novel run examples/channels.nv
+//
+// When a producer has no more values, it closes the channel. A two-value recv
+// reports ok = false once the channel is closed and drained, which is cleaner
+// than a sentinel value when every value is meaningful.
+
+import std.io
+
+fn produce(out chan<int>, count int) {
+    for i = 1; i <= count; i++ {
+        send(out, i * 10)
+    }
+    close(out)
+}
+
+fn main() {
+    let ch = chan<int>(4)
+    spawn produce(ch, 5)
+
+    let received = 0
+    for {
+        let v, ok = recv(ch)
+        if !ok {
+            break
+        }
+        io.println($"received {v}")
+        received += 1
+    }
+    io.println($"channel closed after {received} values")
+}

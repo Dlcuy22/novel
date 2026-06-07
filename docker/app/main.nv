@@ -1,0 +1,15 @@
+// main.nv: the NVLPATH demo app.
+// Run inside the Novel Docker image, or locally with NVLPATH pointed at a store
+// built from docker/store/. Demonstrates importing both a global Novel module
+// (greet, bundled at compile time) and a global Lua module (banner, resolved at
+// runtime), alongside the standard library.
+
+import std.io
+import greet
+import banner
+
+fn main() {
+    io.println(banner.line("NVLPATH demo"))
+    io.println(greet.hello("Novel"))
+    io.println(greet.shout("global modules work"))
+}

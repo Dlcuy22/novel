@@ -1,0 +1,21 @@
+// lua_interop.nv: using Lua libraries directly from Novel.
+// Run with: bin/novel run examples/lua_interop.nv
+//
+// A Novel `import bit` lowers straight to Lua's `require("bit")`. That means any
+// Lua module reachable on the Lua path works the same way the std/* modules do:
+// import it, then call its functions with dot-call syntax. Here we use LuaJIT's
+// built-in `bit` library, which needs no installation.
+
+import std.io
+import bit
+
+fn main() {
+    // bit.* are plain Lua functions, called with a dot like any imported module.
+    let masked = bit.band(0xFF, 0x3C)
+    let shifted = bit.lshift(1, 4)
+    let flipped = bit.bxor(0xF0, 0x0F)
+
+    io.println($"band(0xFF, 0x3C) = {masked}")
+    io.println($"lshift(1, 4)     = {shifted}")
+    io.println($"bxor(0xF0, 0x0F) = {flipped}")
+}

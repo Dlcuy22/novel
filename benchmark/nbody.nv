@@ -1,0 +1,115 @@
+// nbody.nv: a small gravitational N-body simulation.
+// Run with: bin/novel run benchmark/nbody.nv
+//
+// Stresses struct field access and float math, with structs mutated in place
+// through free functions (Novel structs are tables, passed by reference). The
+// checksum is the integer-scaled system energy after the run, which is stable
+// as long as the physics is unchanged.
+
+import std.io
+import std.time
+
+const dt       = 0.01
+const bodyCount = 5
+
+type Body struct {
+    x  float64
+    y  float64
+    z  float64
+    vx float64
+    vy float64
+    vz float64
+    mass float64
+}
+
+// advance integrates one timestep: pairwise gravity into velocities, then
+// velocities into positions. Bodies are mutated in place.
+fn advance(bodies []Body) {
+    for i = 1; i <= bodyCount; i++ {
+        let bi = bodies[i]
+        for j = i + 1; j <= bodyCount; j++ {
+            let bj = bodies[j]
+            let dx = bi.x - bj.x
+            let dy = bi.y - bj.y
+            let dz = bi.z - bj.z
+            let d2 = dx * dx + dy * dy + dz * dz + 0.0001
+            let dist = sqrtApprox(d2)
+            let mag = dt / (d2 * dist)
+
+            bi.vx = bi.vx - dx * bj.mass * mag
+            bi.vy = bi.vy - dy * bj.mass * mag
+            bi.vz = bi.vz - dz * bj.mass * mag
+            bj.vx = bj.vx + dx * bi.mass * mag
+            bj.vy = bj.vy + dy * bi.mass * mag
+            bj.vz = bj.vz + dz * bi.mass * mag
+        }
+    }
+    for i = 1; i <= bodyCount; i++ {
+        let b = bodies[i]
+        b.x = b.x + dt * b.vx
+        b.y = b.y + dt * b.vy
+        b.z = b.z + dt * b.vz
+    }
+}
+
+// sqrtApprox computes a square root with Newton's method (no math import yet).
+fn sqrtApprox(v float64) float64 {
+    if v <= 0.0 {
+        ret 0.0
+    }
+    let guess = v
+    for i = 0; i < 20; i++ {
+        guess = 0.5 * (guess + v / guess)
+    }
+    ret guess
+}
+
+// energy returns the total kinetic + potential energy of the system.
+fn energy(bodies []Body) float64 {
+    let e = 0.0
+    for i = 1; i <= bodyCount; i++ {
+        let bi = bodies[i]
+        e += 0.5 * bi.mass * (bi.vx * bi.vx + bi.vy * bi.vy + bi.vz * bi.vz)
+        for j = i + 1; j <= bodyCount; j++ {
+            let bj = bodies[j]
+            let dx = bi.x - bj.x
+            let dy = bi.y - bj.y
+            let dz = bi.z - bj.z
+            let dist = sqrtApprox(dx * dx + dy * dy + dz * dz + 0.0001)
+            e -= bi.mass * bj.mass / dist
+        }
+    }
+    ret e
+}
+
+fn makeBodies() []Body {
+    let bodies = []Body{}
+    bodies.append(Body{ x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, mass: 20.0 })
+    bodies.append(Body{ x: 1.0, y: 0.0, z: 0.0, vx: 0.0, vy: 2.0, vz: 0.0, mass: 1.0 })
+    bodies.append(Body{ x: 0.0, y: 1.5, z: 0.0, vx: -1.5, vy: 0.0, vz: 0.0, mass: 1.0 })
+    bodies.append(Body{ x: -2.0, y: 0.0, z: 0.5, vx: 0.0, vy: -1.0, vz: 0.0, mass: 1.0 })
+    bodies.append(Body{ x: 0.0, y: -2.5, z: -0.5, vx: 1.0, vy: 0.0, vz: 0.0, mass: 1.0 })
+    ret bodies
+}
+
+fn run(steps int) float64 {
+    let bodies = makeBodies()
+    for s = 1; s <= steps; s++ {
+        advance(bodies)
+    }
+    ret energy(bodies)
+}
+
+fn main() {
+    // Warmup pass.
+    run(1000)
+
+    const steps = 200000
+    let t0 = time.now()
+    let e = run(steps)
+    let dt2 = time.now() - t0
+
+    // Scale the float energy into an integer checksum for stable comparison.
+    let checksum = e * 1000.0
+    io.println($"nbody\t{dt2 * 1000.0}\t{checksum}")
+}

@@ -1,0 +1,31 @@
+# Build artifacts
+/bin/
+/dist/
+*.luac
+
+# Native image library (built by `make image-lib`)
+runtime/libnovel_image.so
+runtime/libnovel_image.dylib
+runtime/libnovel_image.dll
+
+# Go
+*.test
+*.out
+coverage.*
+
+# Node / VS Code extension
+node_modules/
+*.vsix
+editors/vscode/out/
+editors/vscode/dist/
+
+# Editor/OS noise
+.DS_Store
+.idea/
+*.swp
+.claude
+
+# NVLPATH demo store: seeded by `make docker-demo`, keep the dir via .gitkeep
+/examples/NVLPATH_examples/*
+!/examples/NVLPATH_examples/.gitkeep
+*.jpg

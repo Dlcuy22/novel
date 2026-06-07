@@ -1,0 +1,46 @@
+// concurrency.nv: green threads and channels.
+// Run with: bin/novel run examples/concurrency.nv
+
+import std.io
+
+// A producer sends a sequence of values, then a sentinel (-1) to signal "done".
+fn produce(out chan<int>, count int) {
+    for i = 1; i <= count; i++ {
+        send(out, i)
+    }
+    send(out, -1)
+}
+
+// A squarer reads numbers until the sentinel, forwarding squares downstream.
+fn square(input chan<int>, out chan<int>) {
+    for {
+        let n = recv(input)
+        if n < 0 {
+            send(out, -1)
+            ret
+        }
+        send(out, n * n)
+    }
+}
+
+fn main() {
+    // Channels carry values between green threads. chan<int>(n) is buffered.
+    let raw = chan<int>(8)
+    let squared = chan<int>(8)
+
+    // spawn runs a function as a green thread on the cooperative scheduler.
+    spawn produce(raw, 6)
+    spawn square(raw, squared)
+
+    // Drain the pipeline on the main thread until the sentinel arrives.
+    let sum = 0
+    for {
+        let v = recv(squared)
+        if v < 0 {
+            break
+        }
+        io.println($"got {v}")
+        sum += v
+    }
+    io.println($"sum of squares = {sum}")
+}

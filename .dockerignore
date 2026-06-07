@@ -1,0 +1,21 @@
+# Keep the build context small and deterministic. The Dockerfile copies only
+# go.mod, cmd/, internal/, runtime/, and docker/, so exclude everything heavy or
+# host-specific.
+.git
+bin
+dist
+*.luac
+*.vsix
+editors/vscode/node_modules
+editors/vscode/out
+editors/vscode/dist
+examples/NVLPATH_examples
+benchmark/results
+*.test
+*.out
+coverage.*
+.DS_Store
+.idea
+*.swp
+.claude
+concurrency.lbobj

@@ -1,0 +1,12 @@
+import std.io
+
+fn dongotambah(a int, b int) int {
+    ret a + b
+}
+
+fn main() {
+    let a = 3
+    let b = 4
+    let c = dongotambah(a, b)
+    io.println($"dongotambah({a}, {b}) = {c}")
+}

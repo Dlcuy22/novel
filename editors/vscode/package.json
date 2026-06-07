@@ -1,0 +1,85 @@
+{
+  "name": "novel",
+  "displayName": "Novel Language",
+  "description": "Syntax highlighting and language support for the Novel language (.nv).",
+  "version": "0.2.8",
+  "publisher": "novel-lang",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:novel.showEnvironment"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "novel",
+        "aliases": [
+          "Novel",
+          "novel"
+        ],
+        "extensions": [
+          ".nv"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "novel",
+        "scopeName": "source.novel",
+        "path": "./syntaxes/novel.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "novel",
+        "path": "./snippets/novel.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "novel.showEnvironment",
+        "title": "Novel: Show Environment",
+        "category": "Novel"
+      }
+    ],
+    "configuration": {
+      "title": "Novel",
+      "properties": {
+        "novel.server.path": {
+          "type": "string",
+          "default": "novel-lsp",
+          "description": "Path to the novel-lsp language server binary."
+        },
+        "novel.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Trace the communication between VS Code and the Novel language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,62 @@
+// vector.nv: 3D vector struct with methods in a hot loop.
+// Run with: bin/novel run benchmark/vector.nv
+//
+// Stresses struct construction and method dispatch (colon-calls in the emitted
+// Lua). Each iteration builds vectors and combines them through add/scale/dot,
+// so the cost is dominated by table allocation and method calls. The checksum
+// is the integer-scaled running dot-product accumulator.
+
+import std.io
+import std.time
+
+type Vec3 struct {
+    x float64
+    y float64
+    z float64
+}
+
+fn (a Vec3) add(b Vec3) Vec3 {
+    ret Vec3{ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z }
+}
+
+fn (a Vec3) scale(s float64) Vec3 {
+    ret Vec3{ x: a.x * s, y: a.y * s, z: a.z * s }
+}
+
+fn (a Vec3) dot(b Vec3) float64 {
+    ret a.x * b.x + a.y * b.y + a.z * b.z
+}
+
+fn compute(iters int) float64 {
+    let acc = 0.0
+    let i = 1
+    for i <= iters {
+        // Keep components in a small fixed range so the dot products stay
+        // integer-valued and the checksum is exact regardless of iteration count.
+        let m = (i % 97) + 1
+        let fm = m
+        let a = Vec3{ x: fm, y: fm + 1.0, z: fm + 2.0 }
+        let b = Vec3{ x: 2.0, y: 3.0, z: 4.0 }
+        let c = a.add(b).scale(2.0)
+        acc += c.dot(a)
+        // Keep the accumulator bounded but exact (well under 2^53).
+        if acc > 1000000000000.0 {
+            acc = acc - 1000000000000.0
+        }
+        i += 1
+    }
+    ret acc
+}
+
+fn main() {
+    // Warmup so method call sites are compiled before timing.
+    compute(100000)
+
+    const iters = 10000000
+    let t0 = time.now()
+    let acc = compute(iters)
+    let dt = time.now() - t0
+
+    let checksum = acc
+    io.println($"vector\t{dt * 1000.0}\t{checksum}")
+}

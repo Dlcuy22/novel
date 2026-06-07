@@ -1,0 +1,17 @@
+// read_input.nv: reading from stdin with std.io.
+// Run with: echo "Ada" | bin/novel run examples/read_input.nv
+//
+// readLine cooperates with the scheduler: while it waits for input, other
+// green threads keep running. It returns nil at end of input.
+
+import std.io
+
+fn main() {
+    io.print("What is your name? ")
+    let name = io.readLine()
+    if name == nil {
+        io.println("(no input)")
+        ret
+    }
+    io.println($"Hello, {name}!")
+}

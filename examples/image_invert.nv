@@ -1,0 +1,41 @@
+// image_invert.nv: load an image, invert its colors, save it with std.image.
+// Run with: make image-lib   (once, to build the native library)
+//           bin/novel run examples/image_invert.nv <in.png> <out.png>
+//
+// std.image needs the native library libnovel_image (built by `make image-lib`).
+// Pixel coordinates are 0-based with the origin at the top-left.
+
+import std.io
+import std.os
+import std.image
+
+fn main() {
+    let argv = os.args()
+    if argv.len() < 2 {
+        io.eprintln("usage: novel run image_invert.nv <in> <out>")
+        os.exit(2)
+    }
+    let inPath = argv[1]
+    let outPath = argv[2]
+
+    let img, err = image.load(inPath)
+    if err != nil {
+        io.eprintln($"load failed: {err.msg}")
+        os.exit(1)
+    }
+
+    // Invert every pixel's RGB; keep alpha unchanged.
+    for y = 0; y < img.height; y++ {
+        for x = 0; x < img.width; x++ {
+            let r, g, b, a = img.get(x, y)
+            img.set(x, y, 255 - r, 255 - g, 255 - b, a)
+        }
+    }
+
+    let ok, serr = img.savePNG(outPath)
+    if !ok {
+        io.eprintln($"save failed: {serr.msg}")
+        os.exit(1)
+    }
+    io.println($"inverted {img.width}x{img.height} image -> {outPath}")
+}

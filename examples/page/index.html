@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel Language Documentation</title>
+    <style>
+        body {
+            background-color: #0d0e12;
+            color: #d1d5db;
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        header {
+            border-bottom: 1px solid #1f2937;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1, h2, h3 {
+            color: #ffffff;
+            font-weight: 600;
+        }
+        h1 {
+            font-size: 2.25rem;
+            margin-top: 0;
+        }
+        h2 {
+            font-size: 1.5rem;
+            border-bottom: 1px solid #1f2937;
+            padding-bottom: 8px;
+            margin-top: 40px;
+        }
+        h3 {
+            font-size: 1.15rem;
+            margin-top: 30px;
+        }
+        a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.9rem;
+            color: #e6edf3;
+        }
+        code {
+            background-color: #1f2937;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.9em;
+            color: #f3f4f6;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: inherit;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px 12px;
+            border: 1px solid #30363d;
+            text-align: left;
+        }
+        th {
+            background-color: #161b22;
+            color: #ffffff;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .nav-links {
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+        .nav-links a {
+            margin-right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Novel Language Documentation</h1>
+            <p>Novel is a statically typed language that transpiles to Lua 5.1 and runs on LuaJIT.</p>
+            <div class="nav-links">
+                <a href="#about">About</a>
+                <a href="#pipeline">Architecture Pipeline</a>
+                <a href="#runtime">Runtime Shim</a>
+                <a href="#dispatch">Platform Dispatching</a>
+                <a href="#guides">Guides</a>
+                <a href="#examples">Examples</a>
+            </div>
+        </header>
+
+        <section id="about">
+            <h2>About Novel</h2>
+            <p>Novel borrows Go's type discipline and explicit error handling, adds keyword-rich syntax, and provides lightweight concurrency via green threads on LuaJIT coroutines.</p>
+            <p>We do not try to replace Lua; we just want to elevate the developer experience. By bringing static typing and explicit error handling to prevent runtime errors, Novel turns Lua from a simple scripting tool into a robust language for building full-scale applications.</p>
+            
+            <h3>Status</h3>
+            <p>Novel is in early bootstrap. The lexer, parser, emitter, and runtime run real programs; the type checker is currently a no-op walk, so type errors are not yet reported at compile time.</p>
+        </section>
+
+        <section id="pipeline">
+            <h2>Toolchain Architecture</h2>
+            <p>How a <code>.nv</code> file becomes a running program, and where each piece lives in the codebase.</p>
+            
+            <h3>Compilation Pipeline</h3>
+            <pre><code>.nv source
+   │
+   ▼
+internal/lexer      source text -> []token.Token
+   │
+   ▼
+internal/parser     tokens -> *ast.File
+   │
+   ▼
+internal/types      semantic checks (no AST mutation yet)
+   │
+   ▼
+internal/emit       *ast.File -> Lua 5.1 source string
+   │
+   ▼
+LuaJIT              luajit - (direct) or luajit -b (bytecode)</code></pre>
+
+            <p><code>internal/compiler.Compile(src) Result</code> glues these stages together and returns the emitted Lua plus a flat list of <code>Diagnostic</code>s. Every front end (CLI, REPL, LSP) calls this one function so behavior never diverges between them.</p>
+
+            <h3>Why a Shared Driver</h3>
+            <p>Three consumers need identical results:</p>
+            <ul>
+                <li><strong>cmd/novel</strong>: <code>build</code> writes <code>.lua</code>, while <code>run</code> pipes Lua to <code>luajit</code> over stdin.</li>
+                <li><strong>REPL</strong>: A <code>compiler.ReplSession</code> lowers each line (import, declaration, statement, or bare expression) to a Lua chunk and streams it to a persistent <code>luajit</code> process running <code>runtime/repl.lua</code>, so session state persists.</li>
+                <li><strong>cmd/novel-lsp</strong>: Compiles on document change and publishes diagnostics.</li>
+            </ul>
+            <p>Keeping the pipeline in <code>internal/compiler</code> means a parser or type-checker fix improves all three at once.</p>
+        </section>
+
+        <section id="runtime">
+            <h2>Runtime Shim</h2>
+            <p>Emitted Lua is untyped and depends on the runtime shim (<code>runtime/novel.lua</code>) for concurrency and scheduler tasks.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Novel Construct</th>
+                        <th>Lowers to Lua Runtime API</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>spawn f()</code></td>
+                        <td><code>novel.spawn(function() ... end)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>chan&lt;T&gt;()</code></td>
+                        <td><code>novel.chan()</code> (unbuffered)</td>
+                    </tr>
+                    <tr>
+                        <td><code>chan&lt;T&gt;(n)</code></td>
+                        <td><code>novel.chan(n)</code> (buffered)</td>
+                    </tr>
+                    <tr>
+                        <td><code>send(ch, v)</code> or <code>ch &lt;- v</code></td>
+                        <td><code>novel.send(ch, v)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>recv(ch)</code></td>
+                        <td><code>novel.recv(ch)</code> (returns <code>value, ok</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><code>close(ch)</code></td>
+                        <td><code>novel.close(ch)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>error("msg")</code></td>
+                        <td><code>novel.error("msg")</code> (returns <code>{msg=...}</code>)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>The scheduler is cooperative: green threads run until they block on a channel or finish. <code>novel.run()</code> drains the run queue and is emitted at the end of <code>main</code>. Channel blocking is implemented with <code>coroutine.yield</code> and <code>coroutine.resume</code>; a blocked sender or receiver is re-enqueued by the operation that unblocks it.</p>
+
+            <h3>How Green Threads Work</h3>
+            <p>Novel implements lightweight concurrency through cooperative green threads, managed entirely in user space by the runtime. Unlike OS threads, green threads have negligible memory overhead and can be spawned by the millions without exhausting system resources.</p>
+            <ul>
+                <li><strong>LuaJIT Coroutines</strong>: Each green thread is backed by a native Lua coroutine. When a thread blocks, it yields execution back to the scheduler.</li>
+                <li><strong>Cooperative Scheduling</strong>: Threads run until they voluntarily block (e.g., waiting for channel I/O via <code>recv</code>/<code>send</code> or calling <code>time.sleep</code>). There is no preemption; a thread must yield control for others to execute.</li>
+                <li><strong>I/O Reactor</strong>: The runtime includes a POSIX <code>poll(2)</code>-based reactor. When a green thread waits on a network socket or file descriptor, it registers its interest with the reactor and yields. The main thread blocks inside the reactor's poll loop only when no green threads are ready to run, waking up immediately when I/O completes or a timer expires.</li>
+            </ul>
+        </section>
+
+        <section id="dispatch">
+            <h2>Platform-Specific Module Dispatching Pattern</h2>
+            <p>For standard library modules that call platform-specific C APIs via LuaJIT FFI (such as filesystem or networking), we use a dynamic file-based dispatching pattern.</p>
+            <p>Instead of combining all platforms into a single file with complex OS checks, we split the platform-specific logic into clean backend files (<code>*_posix.lua</code> and <code>*_windows.lua</code>) and use a lightweight dispatcher file that queries the host OS via <code>std/os</code> or <code>ffi.os</code>.</p>
+            
+            <p>For example, <code>std/fs</code> is split into:</p>
+            <ol>
+                <li><code>runtime/sys/fs_posix.lua</code>, POSIX C bindings for Linux/macOS/BSD.</li>
+                <li><code>runtime/sys/fs_windows.lua</code>, Win32 C bindings for Windows.</li>
+                <li><code>runtime/std/fs.lua</code>, the public dispatcher:</li>
+            </ol>
+            
+            <pre><code>local os = require("std/os")
+local backend
+if os.isWindows() then
+  backend = require("sys/fs_windows")
+else
+  backend = require("sys/fs_posix")
+end
+return backend</code></pre>
+
+            <p>Because LuaJIT evaluates imports and C declarations dynamically at runtime, this prevents compilation errors and keeps the implementation files modular and maintainable.</p>
+        </section>
+
+        <section id="guides">
+            <h2>Guides</h2>
+            <ul>
+                <li><strong>Getting Started</strong>: Install prerequisites, build the toolchain, and run your first program.</li>
+                <li><strong>Language Guide</strong>: Syntax and semantics, from variables and types through functions, structs, control flow, collections, and errors.</li>
+                <li><strong>Concurrency</strong>: Green threads, channels, and concurrency patterns.</li>
+                <li><strong>Standard Library</strong>: The <code>std/*</code> modules (math, str, rand, crypto, json, encoding, fs, http, exec).</li>
+            </ul>
+        </section>
+
+        <section id="examples">
+            <h2>Runnable Examples</h2>
+            <p>Runnable programs live in the <code>examples/</code> directory:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Example File</th>
+                        <th>Demonstrates</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>basics.nv</code></td>
+                        <td>variables, functions, multi-return, and interpolation</td>
+                    </tr>
+                    <tr>
+                        <td><code>control_flow.nv</code></td>
+                        <td>if/elif/else and all four for-loop forms</td>
+                    </tr>
+                    <tr>
+                        <td><code>collections.nv</code></td>
+                        <td>slices and maps</td>
+                    </tr>
+                    <tr>
+                        <td><code>structs.nv</code></td>
+                        <td>struct types, methods, and composition</td>
+                    </tr>
+                    <tr>
+                        <td><code>errors.nv</code></td>
+                        <td>the <code>(T, error)</code> return pattern</td>
+                    </tr>
+                    <tr>
+                        <td><code>concurrency.nv</code></td>
+                        <td>a two-stage channel pipeline</td>
+                    </tr>
+                    <tr>
+                        <td><code>channels.nv</code></td>
+                        <td>closing a channel and two-value <code>recv</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>worker_pool.nv</code></td>
+                        <td>fan-out work and fan-in results</td>
+                    </tr>
+                    <tr>
+                        <td><code>static_server.nv</code></td>
+                        <td>static file serving using <code>std/fs</code> and <code>std/http</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>exec_demo.nv</code></td>
+                        <td>process execution and output capturing using <code>std/exec</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+</body>
+</html>

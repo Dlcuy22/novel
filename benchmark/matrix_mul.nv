@@ -1,0 +1,76 @@
+// matrix_mul.nv: dense square matrix multiplication.
+// Run with: bin/novel run benchmark/matrix_mul.nv
+//
+// Stresses nested-slice indexing and the triple-nested multiply-accumulate
+// loop. Matrices are [][]int built row by row. The checksum is the trace of
+// the product (sum of the diagonal), which is exact.
+
+import std.io
+import std.time
+
+const n = 120
+
+// makeMatrix builds an n x n matrix where cell (r, c) = (r * 7 + c * 3) % 17.
+// Indices are 1-based.
+fn makeMatrix(seed int) [][]int {
+    let m = [][]int{}
+    for r = 1; r <= n; r++ {
+        let row = []int{}
+        for c = 1; c <= n; c++ {
+            row.append((r * 7 + c * 3 + seed) % 17)
+        }
+        m.append(row)
+    }
+    ret m
+}
+
+// multiply returns a x b (both n x n).
+fn multiply(a [][]int, b [][]int) [][]int {
+    let out = [][]int{}
+    for r = 1; r <= n; r++ {
+        let arow = a[r]
+        let orow = []int{}
+        for c = 1; c <= n; c++ {
+            let acc = 0
+            for k = 1; k <= n; k++ {
+                let brow = b[k]
+                acc += arow[k] * brow[c]
+            }
+            orow.append(acc)
+        }
+        out.append(orow)
+    }
+    ret out
+}
+
+// trace sums the diagonal of an n x n matrix.
+fn trace(m [][]int) int {
+    let t = 0
+    for i = 1; i <= n; i++ {
+        let row = m[i]
+        t += row[i]
+    }
+    ret t
+}
+
+fn run() int {
+    let a = makeMatrix(1)
+    let b = makeMatrix(2)
+    let c = multiply(a, b)
+    ret trace(c)
+}
+
+fn main() {
+    // Warmup so the inner k-loop is compiled before timing.
+    run()
+
+    const passes = 8
+    let t0 = time.now()
+    let checksum = 0
+    for p = 1; p <= passes; p++ {
+        checksum = run()
+    }
+    let dt = time.now() - t0
+
+    io.println($"matrix_mul\t{dt * 1000.0}\t{checksum}")
+}

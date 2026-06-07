@@ -1,0 +1,56 @@
+// mandelbrot.nv: escape-time Mandelbrot over a pixel grid.
+// Run with: bin/novel run benchmark/mandelbrot.nv
+//
+// Stresses float arithmetic in a tight inner loop with an early-exit condition,
+// wrapped in two outer loops over the grid. The checksum sums the integer
+// iteration counts, which is exact and independent of float formatting.
+
+import std.io
+import std.time
+
+const width   = 600
+const height  = 400
+const maxIter = 256
+
+// escapeCount returns how many iterations z stays bounded for the point (cx, cy),
+// capped at maxIter. A point that never escapes returns maxIter.
+fn escapeCount(cx float64, cy float64) int {
+    let zx = 0.0
+    let zy = 0.0
+    let iter = 0
+    for iter < maxIter {
+        let zx2 = zx * zx
+        let zy2 = zy * zy
+        if zx2 + zy2 > 4.0 {
+            ret iter
+        }
+        zy = 2.0 * zx * zy + cy
+        zx = zx2 - zy2 + cx
+        iter += 1
+    }
+    ret maxIter
+}
+
+// render sweeps the grid and accumulates the total iteration count.
+fn render() int {
+    let total = 0
+    for py = 0; py < height; py++ {
+        let cy = (py - 200) * 0.005
+        for px = 0; px < width; px++ {
+            let cx = (px - 400) * 0.005
+            total += escapeCount(cx, cy)
+        }
+    }
+    ret total
+}
+
+fn main() {
+    // Warmup so the inner escape loop is compiled before timing.
+    render()
+
+    let t0 = time.now()
+    let checksum = render()
+    let dt = time.now() - t0
+
+    io.println($"mandelbrot\t{dt * 1000.0}\t{checksum}")
+}

@@ -1,0 +1,27 @@
+// json_roundtrip.nv: encode and decode JSON with std.json.
+// Run with: bin/novel run examples/json_roundtrip.nv
+//
+// json.decode returns dynamic data (an `any`, since its shape isn't known at
+// compile time); read fields and indices off it directly.
+
+import std.io
+import std.json
+
+fn main() {
+    // Encode a value to a JSON string.
+    let payload = map[string]any{
+        "name": "novel",
+        "version": 1,
+        "features": []any{"channels", "async", "ffi"},
+    }
+    let text = json.encode(payload)
+    io.println($"encoded: {text}")
+
+    // Decode JSON text back into data.
+    let data, err = json.decode(`{"ok": true, "count": 3, "tags": ["a", "b"]}`)
+    if err != nil {
+        io.eprintln($"decode failed: {err.msg}")
+        ret
+    }
+    io.println($"ok={data.ok} count={data.count} first tag={data.tags[1]}")
+}

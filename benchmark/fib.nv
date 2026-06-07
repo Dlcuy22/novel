@@ -1,0 +1,27 @@
+// fib.nv: naive recursive Fibonacci.
+// Run with: bin/novel run benchmark/fib.nv
+//
+// Stresses function-call overhead and recursion. fib(35) makes ~29 million
+// calls, so this is dominated by call/return cost rather than arithmetic.
+
+import std.io
+import std.time
+
+fn fib(n int) int {
+    if n < 2 {
+        ret n
+    }
+    ret fib(n - 1) + fib(n - 2)
+}
+
+fn main() {
+    // Warmup so the recursive call site is compiled before timing.
+    fib(25)
+
+    const n = 35
+    let t0 = time.now()
+    let result = fib(n)
+    let dt = time.now() - t0
+
+    io.println($"fib\t{dt * 1000.0}\t{result}")
+}

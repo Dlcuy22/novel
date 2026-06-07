@@ -1,0 +1,39 @@
+// geometry.nv: a small imported module.
+// Imported by examples/modules/main.nv via `import geometry`.
+//
+// Only `pub` declarations are visible to importers; everything else stays
+// private to this module. Functions call each other freely within the file.
+
+const pi = 3.14159265358979
+
+// circleArea returns the area of a circle with the given radius.
+pub fn circleArea(radius float64) float64 {
+    ret pi * radius * radius
+}
+
+// circumference returns the perimeter of a circle.
+pub fn circumference(radius float64) float64 {
+    ret 2.0 * pi * radius
+}
+
+// rectArea returns the area of a rectangle. Private helpers like this one are
+// not exported, but exported functions may still use them.
+fn rectArea(w float64, h float64) float64 {
+    ret w * h
+}
+
+// squareArea returns the area of a square with the given side.
+pub fn squareArea(side float64) float64 {
+    ret rectArea(side, side)
+}
+
+// An exported struct type. Importers construct it with the qualified form
+// `geometry.Rect{ ... }` and call its exported methods.
+pub type Rect struct {
+    pub width  float64
+    pub height float64
+}
+
+pub fn (r Rect) area() float64 {
+    ret rectArea(r.width, r.height)
+}

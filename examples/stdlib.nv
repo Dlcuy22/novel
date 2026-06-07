@@ -1,0 +1,38 @@
+// stdlib.nv: a tour of the Novel standard library modules.
+// Run with: bin/novel run examples/stdlib.nv
+
+import std.io
+import std.math
+import std.str
+import std.rand
+import std.crypto
+
+fn main() {
+    // std/math: numeric helpers.
+    io.println($"sqrt(144) = {math.sqrt(144.0)}")
+    io.println($"clamp(42, 0, 10) = {math.clamp(42, 0, 10)}")
+    io.println($"max(3, 9) = {math.max(3, 9)}")
+
+    // std/str: string operations. split returns a slice.
+    // Note: pull string-literal arguments into locals, since nested double
+    // quotes inside an interpolation are not supported yet.
+    let parts = str.split("alice,bob,carol", ",")
+    let joined = str.join(parts, " | ")
+    let upper = str.upper("novel")
+    let trimmed = str.trim("  spaced  ")
+    io.println($"split count = {parts.len()}")
+    io.println($"joined = {joined}")
+    io.println($"upper = {upper}")
+    io.println($"trimmed = '{trimmed}'")
+
+    // std/rand: seed for a reproducible run, then draw some numbers.
+    rand.seed(1234)
+    let die = rand.between(1, 6)
+    io.println($"dice roll = {die}")
+
+    // std/crypto: SHA-256 (hex) and a fast non-crypto hash.
+    let digest = crypto.sha256("abc")
+    let h = crypto.fnv1a("abc")
+    io.println($"sha256(abc) = {digest}")
+    io.println($"fnv1a(abc) = {h}")
+}

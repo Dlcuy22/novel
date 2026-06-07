@@ -1,0 +1,191 @@
+{
+  "Import": {
+    "prefix": "import",
+    "body": ["import ${1:std.io}"],
+    "description": "Import a module"
+  },
+  "Import aliased": {
+    "prefix": "importas",
+    "body": ["import ${1:std.math} as ${2:m}"],
+    "description": "Import a module under an alias"
+  },
+  "Main function": {
+    "prefix": "main",
+    "body": ["fn main() {", "\t$0", "}"],
+    "description": "Program entry point"
+  },
+  "Program skeleton": {
+    "prefix": "program",
+    "body": [
+      "import std.io",
+      "",
+      "fn main() {",
+      "\t$0",
+      "}"
+    ],
+    "description": "A minimal runnable program (import + main)"
+  },
+  "Function": {
+    "prefix": "fn",
+    "body": ["fn ${1:name}(${2:args}) ${3:int} {", "\t$0", "}"],
+    "description": "Function declaration with a return type"
+  },
+  "Function (no return)": {
+    "prefix": "fnv",
+    "body": ["fn ${1:name}(${2:args}) {", "\t$0", "}"],
+    "description": "Function declaration with no return value"
+  },
+  "Function (T, error)": {
+    "prefix": "fnerr",
+    "body": [
+      "fn ${1:name}(${2:args}) (${3:int}, error) {",
+      "\tif ${4:cond} {",
+      "\t\tret ${5:0}, error(\"${6:message}\")",
+      "\t}",
+      "\tret ${7:value}, nil",
+      "}"
+    ],
+    "description": "Fallible function returning (T, error)"
+  },
+  "Method": {
+    "prefix": "method",
+    "body": [
+      "fn (${1:r} ${2:Type}) ${3:name}(${4:args}) ${5:int} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Method declaration with a receiver"
+  },
+  "Struct type": {
+    "prefix": "struct",
+    "body": [
+      "type ${1:Name} struct {",
+      "\t${2:field} ${3:int}",
+      "}"
+    ],
+    "description": "Struct type declaration"
+  },
+  "let (inferred)": {
+    "prefix": "let",
+    "body": ["let ${1:name} = ${2:value}"],
+    "description": "Mutable binding, type inferred"
+  },
+  "let (typed)": {
+    "prefix": "lett",
+    "body": ["let ${1:name} ${2:int} = ${3:value}"],
+    "description": "Mutable binding with an explicit type"
+  },
+  "const": {
+    "prefix": "const",
+    "body": ["const ${1:NAME} = ${2:value}"],
+    "description": "Immutable binding"
+  },
+  "Multi-return assignment": {
+    "prefix": "letm",
+    "body": ["let ${1:value}, ${2:err} = ${3:call}()"],
+    "description": "Destructure a multi-return into several names"
+  },
+  "if": {
+    "prefix": "if",
+    "body": ["if ${1:cond} {", "\t$0", "}"],
+    "description": "If statement"
+  },
+  "if / else": {
+    "prefix": "ifelse",
+    "body": ["if ${1:cond} {", "\t$2", "} else {", "\t$0", "}"],
+    "description": "If / else statement"
+  },
+  "if / elif / else": {
+    "prefix": "elif",
+    "body": [
+      "if ${1:cond} {",
+      "\t$2",
+      "} elif ${3:cond} {",
+      "\t$4",
+      "} else {",
+      "\t$0",
+      "}"
+    ],
+    "description": "If / elif / else chain"
+  },
+  "Error check": {
+    "prefix": "iferr",
+    "body": ["if ${1:err} != nil {", "\tret ${2:err}", "}"],
+    "description": "Explicit error check (Novel has no exceptions)"
+  },
+  "for (classic)": {
+    "prefix": "for",
+    "body": ["for ${1:i} = ${2:1}; ${1:i} <= ${3:n}; ${1:i}++ {", "\t$0", "}"],
+    "description": "Classic C-style for loop"
+  },
+  "for (range)": {
+    "prefix": "forin",
+    "body": ["for ${1:v} in ${2:items} {", "\t$0", "}"],
+    "description": "Range over a collection, binding the element"
+  },
+  "for (range index, value)": {
+    "prefix": "forix",
+    "body": ["for ${1:i}, ${2:v} in ${3:items} {", "\t$0", "}"],
+    "description": "Range over a collection with index and value"
+  },
+  "for (while)": {
+    "prefix": "forw",
+    "body": ["for ${1:cond} {", "\t$0", "}"],
+    "description": "While-style for loop"
+  },
+  "for (infinite)": {
+    "prefix": "forever",
+    "body": ["for {", "\t$0", "}"],
+    "description": "Infinite loop (exit with break)"
+  },
+  "String interpolation": {
+    "prefix": "interp",
+    "body": ["$\"${1:text} {${2:expr}}\""],
+    "description": "Interpolated string literal"
+  },
+  "println": {
+    "prefix": "println",
+    "body": ["io.println($\"${1:msg}\")"],
+    "description": "Print a line via std.io"
+  },
+  "Channel": {
+    "prefix": "chan",
+    "body": ["let ${1:ch} = chan<${2:int}>(${3:0})"],
+    "description": "Create a channel (capacity 0 = unbuffered)"
+  },
+  "spawn": {
+    "prefix": "spawn",
+    "body": ["spawn ${1:worker}(${2:args})"],
+    "description": "Run a function as a green thread"
+  },
+  "send": {
+    "prefix": "send",
+    "body": ["send(${1:ch}, ${2:value})"],
+    "description": "Send a value on a channel"
+  },
+  "recv": {
+    "prefix": "recv",
+    "body": ["let ${1:v} = recv(${2:ch})"],
+    "description": "Receive a value from a channel"
+  },
+  "recv (two-value)": {
+    "prefix": "recvok",
+    "body": [
+      "let ${1:v}, ${2:ok} = recv(${3:ch})",
+      "if !${2:ok} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Receive with the closed-channel ok flag"
+  },
+  "Map literal": {
+    "prefix": "map",
+    "body": ["let ${1:m} = map[${2:string}]${3:int}{", "\t\"${4:key}\": ${5:value},", "}"],
+    "description": "Map literal"
+  },
+  "Slice literal": {
+    "prefix": "slice",
+    "body": ["let ${1:xs} = [${2:1, 2, 3}]"],
+    "description": "Slice literal"
+  }
+}

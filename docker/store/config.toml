@@ -1,0 +1,10 @@
+# Store defaults for the Novel global store.
+# Read by the toolchain when no project novel.toml overrides them.
+
+[runtime]
+# The core-runtime version this store ships, matching runtime/<version>/.
+# Declaring it here makes the store self-describing and independent of the
+# toolchain binary's built-in version.
+version = "0.2.8"
+# Recommended LuaJIT for this store. Advisory: the toolchain warns on mismatch.
+luajit = "2.1"

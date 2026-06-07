@@ -1,0 +1,53 @@
+# Changelog
+
+## [0.2.8] - 2026-06-07
+
+### Added
+- Complete native Windows support for the Novel runtime scheduler, low-level FFI reactor, sockets, standard library, and verification tests:
+  - Implemented Win32 and Winsock2 cooperative reactor in `sys/poll_windows.lua` using `WSAPoll` and `WaitForSingleObject`/`PeekNamedPipe` for stdin.
+  - Ported low-level file I/O to Windows standard handles via MSVCRT/UCRT (`sys/posix_windows.lua`).
+  - Ported network sockets layer using Winsock2 API (`sys/socket_windows.lua`), resolving unsigned ioctl overflow and FFI-to-number mapping issues.
+  - Added cryptographically secure random bytes generator via Windows `CryptGenRandom` (`std/rand.lua`).
+  - Added platform dispatcher pattern (`sys/poll.lua`, `sys/posix.lua`, `sys/socket.lua`) to dynamically load Windows or POSIX backends.
+  - Ported `test_novel.lua` to run loopback TCP test on Windows using dynamic ephemeral ports.
+- Closed/invalid socket detection to prevent scheduler infinite-loops or high CPU usage on Windows:
+  - Added `novel.closefd` to notify the reactor and wake up coroutines immediately upon socket close.
+  - Integrated fallback validation via `ioctlsocket` to map `WSAPoll` failures to `POLLNVAL`.
+
+## [0.2.7] - 2026-06-04
+
+### Added
+- Implemented support for keywords as valid field or method names in selector expressions (e.g. `ffi.fn`, `event.type`).
+- Added exported `IsKeyword() bool` to classification tokens in the compiler parser.
+- Introduced experimental `std/wl_ui` Wayland graphics module mapping displays, xdg-shell protocols, and font rendering via a native FFI helper.
+
+### Changed
+- Reverted bracket indexing workaround to standard dot syntax in the X11 demo library (`examples/NVLPATH_examples/ui.nv`).
+
+## [0.2.6] - 2026-06-04
+
+### Added
+- Implemented `std/fs` filesystem module with platform-independent FFI backends:
+  - `fs_posix.lua` using C bindings (opendir, readdir, stat, mkdir, rmdir, unlink, rename) for Linux and macOS/BSD systems.
+  - `fs_windows.lua` using Win32 API bindings (FindFirstFileA, FindNextFileA, GetFileAttributesExA, CreateDirectoryA, etc.) for Windows systems.
+  - Public dispatcher module `fs.lua` dynamically checking host OS via `std/os`.
+- Added `std/exec` subprocess execution module with platform-independent FFI backends:
+  - `exec_posix.lua` using fork, pipe, dup2, execvp, and waitpid with asynchronous pipe reading integrated into the cooperative green-thread scheduler (novel.iowait).
+  - `exec_windows.lua` using Win32 CreateProcessA and PeekNamedPipe polling with novel.sleep yielding.
+  - Public `lookPath` resolution searching system directories in PATH.
+  - Object-oriented `Cmd` structure supporting run(), output(), and combinedOutput().
+- Hardened `std/http` package for framework extensibility:
+  - Exposed raw TCP connection via `req.conn`.
+  - Added request hijacking support via `req.hijacked` flag (skipping default response writes and socket closing).
+  - Promoted internal parsers `http.parseRequest` and `http.writeResponse` to public stable APIs.
+  - Implemented `http.serveFile` with built-in MIME type guessing.
+- Registered `.md` (as `text/markdown`) and `.nv` (as `text/plain`) MIME types in `std/http` so browsers render them instead of downloading them.
+- Created new runnable examples:
+  - `fs_demo.nv` illustrating file and directory operations.
+  - `static_server.nv` demonstrating a static file server.
+  - `exec_demo.nv` showcasing process spawning and output capturing.
+- Built a technical documentation page at `examples/page/index.html` documenting the compiler pipeline, green threads scheduler, reactor, and FFI dispatch patterns.
+
+### Changed
+- Reverted experimental `/timeformatted` route in `examples/http_server.nv` to restore parser stability and clean compilation.
+- Wrapped standard library execution tests in `test_std.lua` inside a spawned green thread (novel.spawn and novel.run) to support cooperative yielding.

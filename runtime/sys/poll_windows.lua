@@ -117,6 +117,18 @@ local function ensure(n)
   return pollbuf
 end
 
+-- safe_wspoll wraps WSAPoll in pcall so that LuaJIT's "interrupted!" error
+-- (raised when the FFI call is interrupted by a signal/event) is caught and
+-- retried instead of crashing the scheduler.
+local function safe_wspoll(buf, n, timeout_ms)
+  local ok, rc = pcall(ws2_32.WSAPoll, buf, n, timeout_ms)
+  if not ok then
+    -- rc is the error message string; "interrupted!" means EINTR equivalent
+    return 0
+  end
+  return rc
+end
+
 -- poll waits up to timeout_ms for readiness on the given fds.
 function M.poll(entries, timeout_ms)
   local has_stdin = false
@@ -147,33 +159,61 @@ function M.poll(entries, timeout_ms)
       buf[i - 1].revents = 0
     end
 
-    local rc = ws2_32.WSAPoll(buf, n, timeout_ms)
-    local ready = {}
-    if rc < 0 then
-      local err = ws2_32.WSAGetLastError()
-      if err == 10038 or err == 10022 then
-        local found_invalid = false
-        for i = 1, n do
-          local fd = tonumber(buf[i - 1].fd)
-          if not is_valid_socket(fd) then
-            ready[#ready + 1] = { fd = fd, revents = M.POLLNVAL }
-            found_invalid = true
+    -- Cap per-call timeout to avoid long blocking FFI calls that LuaJIT cannot
+    -- safely interrupt. Loop until the total requested timeout elapses.
+    local MAX_SLICE = 500
+    local start = M.monotonic()
+    while true do
+      local slice = timeout_ms
+      if timeout_ms < 0 then
+        slice = MAX_SLICE
+      elseif timeout_ms > MAX_SLICE then
+        local elapsed_ms = (M.monotonic() - start) * 1000
+        local remaining = timeout_ms - elapsed_ms
+        if remaining <= 0 then break end
+        slice = remaining > MAX_SLICE and MAX_SLICE or remaining
+      end
+
+      -- Reset revents before each call
+      for i = 1, n do buf[i - 1].revents = 0 end
+
+      local rc = safe_wspoll(buf, n, slice)
+      local ready = {}
+      if rc < 0 then
+        local err = ws2_32.WSAGetLastError()
+        if err == 10038 or err == 10022 then
+          local found_invalid = false
+          for i = 1, n do
+            local fd = tonumber(buf[i - 1].fd)
+            if not is_valid_socket(fd) then
+              ready[#ready + 1] = { fd = fd, revents = M.POLLNVAL }
+              found_invalid = true
+            end
+          end
+          if found_invalid then
+            return ready, #ready
           end
         end
-        if found_invalid then
-          return ready, #ready
+        -- Transient error: brief sleep then retry
+        kernel32.Sleep(1)
+      elseif rc > 0 then
+        for i = 1, n do
+          local rev = buf[i - 1].revents
+          if rev ~= 0 then
+            ready[#ready + 1] = { fd = tonumber(buf[i - 1].fd), revents = rev }
+          end
         end
+        return ready, rc
       end
-      kernel32.Sleep(1)
-    elseif rc > 0 then
-      for i = 1, n do
-        local rev = buf[i - 1].revents
-        if rev ~= 0 then
-          ready[#ready + 1] = { fd = tonumber(buf[i - 1].fd), revents = rev }
-        end
+
+      -- rc == 0 (timeout on this slice). If the caller gave a finite timeout,
+      -- check if total time has elapsed; if infinite (-1), loop forever.
+      if timeout_ms >= 0 then
+        local elapsed_ms = (M.monotonic() - start) * 1000
+        if elapsed_ms >= timeout_ms then break end
       end
     end
-    return ready, rc
+    return {}, 0
   end
 
   -- Multiplexing: poll sockets with a short timeout and poll stdin
@@ -198,7 +238,7 @@ function M.poll(entries, timeout_ms)
         buf[i - 1].events = socket_entries[i].events
         buf[i - 1].revents = 0
       end
-      local ws_rc = ws2_32.WSAPoll(buf, num_sockets, 10)
+      local ws_rc = safe_wspoll(buf, num_sockets, 10)
       if ws_rc > 0 then
         for i = 1, num_sockets do
           local rev = buf[i - 1].revents

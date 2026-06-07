@@ -9,7 +9,7 @@ import std.time
 
 fn handle(req any) any {
     if req.path == "/" {
-        ret http.serveFile("examples/page/index.html")
+        ret http.serveFile("docs/index.html")
     }
 
     // Serve specific files from the current directory.

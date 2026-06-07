@@ -781,14 +781,15 @@ Implemented modules (see `docs/stdlib.md` for full APIs):
 | `std/json`     | encode/decode JSON                                       |
 | `std/encoding` | base64 and hex codecs                                    |
 | `std/ffi`      | direct C interop over LuaJIT's FFI                       |
-| `std/net`      | async TCP/UDP sockets (POSIX), integrated with `spawn`   |
-| `std/http`     | minimal HTTP/1.1 server and client over `std/net`        |
+| `std/fs`       | filesystem operations (mkdir, stat, readDir, rename)     |
+| `std/exec`     | subprocess execution and output capture                  |
+| `std/net`      | async TCP/UDP sockets, integrated with `spawn`           |
+| `std/http`     | minimal HTTP/1.1 server, client, and file serving        |
 | `std/image`    | PNG/JPEG load/edit/save via stb (needs `make image-lib`) |
+| `std/wl_ui`    | Wayland client window spawning and text drawing          |
 | `std/test`     | unit test runner                                         |
 
-`std/net` and `std/http` do non-blocking I/O on the cooperative scheduler's
-`poll(2)` reactor, so one connection never stalls the others (POSIX only for
-now). `std/image` requires a native helper library built with `make image-lib`.
+`std/net` and `std/http` do non-blocking I/O on the cooperative scheduler's reactor (`poll(2)` on Linux/macOS and Winsock2 `WSAPoll`/`WaitForSingleObject` on Windows). `std/image` requires a native helper library built with `make image-lib` and `std/wl_ui` requires `make wl-lib`.
 
 Still planned:
 
@@ -797,7 +798,6 @@ Still planned:
 | `std/chan` | channel utilities (merge, fan-out helpers) |
 | TLS        | encrypted transport for `std/net`/`std/http` |
 | async DNS  | non-blocking hostname resolution           |
-| Windows    | Winsock2 backend for `std/net`             |
 
 ---
 

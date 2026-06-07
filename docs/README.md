@@ -11,8 +11,7 @@ LuaJIT. Start here.
   types through functions, structs, control flow, collections, and errors.
 - [Concurrency](concurrency.md): green threads, channels, and the patterns that
   work today.
-- [Standard Library](stdlib.md): the std/* modules (math, str, rand, crypto),
-  using Lua libraries from Novel, and the planned net module.
+- [Standard Library](stdlib.md): standard modules (math, str, rand, crypto, fs, exec, net, http, wl_ui), using Lua libraries from Novel, and platform-specific FFI backends.
 - [Architecture](architecture.md): how the transpiler is wired, for people
   working on the toolchain itself.
 
@@ -35,6 +34,15 @@ Runnable programs live in `examples/`. Each starts with the command to run it.
 | `fizzbuzz.nv` | the classic |
 | `game_of_life.nv` | a terminal simulation tying features together |
 | `hello.nv` | spawning tasks over a channel |
+| `fs_demo.nv` | filesystem operations (stat, mkdir, readDir, etc.) |
+| `exec_demo.nv` | spawning subprocesses and capturing output |
+| `static_server.nv` | concurrent static file HTTP server |
+| `http_server.nv` | basic HTTP handler server |
+| `tcp_echo.nv` | concurrent TCP echo server over the reactor |
+| `wayland_demo.nv` | experimental Wayland graphical window and font rendering |
+| `image_invert.nv` | image decoding and pixel inversion |
+| `json_roundtrip.nv` | JSON serialization and parsing |
+
 
 Run one with:
 
@@ -50,7 +58,4 @@ built yet.
 
 ## Status
 
-Novel is an early bootstrap. The lexer, parser, emitter, and runtime run real
-programs; the type checker is still a no-op walk, so type errors are not yet
-reported at compile time. See the "Known limitations" section of the Language
-Guide for the current gaps.
+Novel runs real programs end-to-end: the lexer, parser, type checker, emitter, and runtime are operational. The type checker reports semantic errors like undefined identifiers, unused variables, constant re-assignment, call arity, unknown types, and `!` propagation. See the "Known limitations" section of the Language Guide for the remaining gaps.

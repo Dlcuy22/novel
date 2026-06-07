@@ -3,6 +3,10 @@
 ## [0.2.8] - 2026-06-07
 
 ### Added
+- Implemented primitive type conversions via built-in function call syntax (e.g., `int(x)`, `string(y)`).
+  - The type checker rigorously enforces single-argument arity for primitive casts.
+  - The emitter lowers numeric integer casts using `math.modf` to guarantee correct truncation towards zero.
+  - Added an extensive testing suite in `scratch/test_conversions.nv` to verify float-to-int, string-to-int, string-to-float, and boolean casting logic.
 - Complete native Windows support for the Novel runtime scheduler, low-level FFI reactor, sockets, standard library, and verification tests:
   - Implemented Win32 and Winsock2 cooperative reactor in `sys/poll_windows.lua` using `WSAPoll` and `WaitForSingleObject`/`PeekNamedPipe` for stdin.
   - Ported low-level file I/O to Windows standard handles via MSVCRT/UCRT (`sys/posix_windows.lua`).

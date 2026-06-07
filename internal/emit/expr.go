@@ -128,7 +128,7 @@ func (e *Emitter) call(n *ast.CallExpr) string {
 		return fmt.Sprintf("%s:%s(%s)", recv, sel.Name, e.exprList(n.Args))
 	}
 
-	// Free-function builtins.
+	// Free-function builtins and primitive type casts.
 	if id, ok := n.Fn.(*ast.Ident); ok {
 		switch id.Name {
 		case "recv":
@@ -139,6 +139,16 @@ func (e *Emitter) call(n *ast.CallExpr) string {
 			return fmt.Sprintf("novel.close(%s)", e.exprList(n.Args))
 		case "error":
 			return fmt.Sprintf("novel.error(%s)", e.exprList(n.Args))
+		case "int", "int8", "int16", "int32", "int64",
+			"uint", "uint8", "uint16", "uint32", "uint64",
+			"byte", "rune":
+			return fmt.Sprintf("(math.modf(tonumber(%s) or 0))", e.expr(n.Args[0]))
+		case "float32", "float64":
+			return fmt.Sprintf("(tonumber(%s) or 0)", e.expr(n.Args[0]))
+		case "string":
+			return fmt.Sprintf("tostring(%s)", e.expr(n.Args[0]))
+		case "bool":
+			return fmt.Sprintf("(not not %s)", e.expr(n.Args[0]))
 		}
 	}
 

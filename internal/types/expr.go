@@ -92,6 +92,9 @@ func (c *Checker) checkCall(n *ast.CallExpr) {
 			// A binding holding a callable value; treated dynamically.
 		case isPrimitive(fn.Name):
 			// Type conversion like int(x); accept.
+			if len(n.Args) != 1 {
+				c.errorf(n.Pos, "type conversion to %s requires exactly 1 argument", fn.Name)
+			}
 		default:
 			if sig, ok := c.funcs[fn.Name]; ok {
 				c.checkArity(n, fn.Name, sig)

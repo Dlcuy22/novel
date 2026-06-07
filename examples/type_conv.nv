@@ -1,0 +1,19 @@
+import std.io
+
+fn main() {
+    let x = 3.14
+    let y = int(x)
+    io.println($"float: {x}, int: {y}")
+
+    let s = "42"
+    let i = int(s)
+    let f = float64(s)
+    io.println($"string: {s}, int: {i}, float: {f}")
+
+    let n = 100
+    let str = string(n)
+    io.println($"number: {n}, string: {str}")
+
+    let b = bool(n)
+    io.println($"bool: {b}")
+}

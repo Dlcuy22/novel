@@ -90,6 +90,30 @@ All numeric types lower to LuaJIT numbers at runtime, so arithmetic mixes
 freely today. The type checker that will enforce the distinctions is not built
 yet.
 
+### Type Conversion
+
+Primitive types support explicit conversions using function call syntax (e.g., `int(value)`, `string(value)`). The type checker enforces that conversions receive exactly 1 argument.
+
+Supported target primitive types:
+- Integers: `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `byte`, `rune`
+- Floating points: `float32`, `float64`
+- Booleans: `bool`
+- Strings: `string`
+
+Under the hood:
+- **Integer conversions** truncate fractional parts towards zero (lowering to `(math.modf(tonumber(val) or 0))`).
+- **Float conversions** lower to `(tonumber(val) or 0)`.
+- **Boolean conversions** force boolean resolution via double negation (`(not not val)`).
+- **String conversions** convert the value using `tostring(val)`.
+
+Example:
+```nv
+let pi = 3.14
+let integerVal = int(pi)         // integerVal is 3
+let stringVal = string(pi)       // stringVal is "3.14"
+let boolVal = bool(integerVal)   // boolVal is true
+```
+
 ## String interpolation
 
 A string prefixed with `$` interpolates `{...}` expressions:
@@ -329,6 +353,9 @@ let area = tile.rect.area()
 **Not yet supported:** embedded structs with promoted fields (writing the type
 name with no field name and accessing its fields directly). Use a named field
 and access through it as shown above.
+
+#### Keyword Fields and Methods in Selector Expressions
+Keywords are permitted as valid field names or method names in selector expressions (e.g. `ffi.fn`, `event.type`). This allows seamless interoperation with external Lua modules that utilize Lua/Novel reserved keywords as field names.
 
 ## Error handling
 

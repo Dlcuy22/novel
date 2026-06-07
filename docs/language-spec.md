@@ -22,6 +22,8 @@ Novel is a statically typed language that transpiles to Lua for execution on Lua
 ```
 
 ### 2.2 Keywords
+Keywords are reserved identifiers that cannot be used as variable, function, or struct names. However, they are permitted as valid field or method names in selector expressions (e.g. `ffi.fn`, `event.type`).
+
 ```
 fn       let      const    type     struct
 if       elif     else     for      break
@@ -140,6 +142,29 @@ Construct with `error("message")` or `nil` to signal no error.
 type error struct {
     msg string
 }
+```
+
+### 3.7 Type Conversion
+Values of primitive types can be explicitly converted to other primitive types using the type name as a function call. The type checker validates that the conversion call receives exactly one argument.
+
+Supported target primitive types include:
+- Integers: `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `byte`, `rune`
+- Floating points: `float32`, `float64`
+- Booleans: `bool`
+- Strings: `string`
+
+#### Lowering Rules:
+- **Integer conversions**: Truncate fractional parts towards zero (emitted using `(math.modf(tonumber(val) or 0))`).
+- **Float conversions**: Convert to numeric float values (emitted using `(tonumber(val) or 0)`).
+- **Boolean conversions**: Convert to `true` or `false` (emitted using `(not not val)`).
+- **String conversions**: Convert to standard Lua string representation (emitted using `tostring(val)`).
+
+Example:
+```nv
+let f = 3.99
+let i = int(f)       // i is 3 (truncated)
+let s = string(i)    // s is "3"
+let b = bool(i)      // b is true
 ```
 
 ---

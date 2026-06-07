@@ -28,7 +28,7 @@ WLLIB    := runtime/libnovel_wayland.$(IMGEXT)
 # Docker image tag and the host directory the demo store is extracted into.
 IMAGE    := novel:latest
 NVLDEMO  := examples/NVLPATH_examples
-.PHONY: all build novel lsp image-lib wl-lib test test-go test-runtime test-std test-net test-image bench lint fmt clean image-clean wl-clean ext-build ext-install help docker-build docker-run docker-demo docker-clean
+.PHONY: all build novel lsp image-lib wl-lib test test-go test-runtime test-std test-net test-image bench bench-transpiler lint fmt clean image-clean wl-clean ext-build ext-install help docker-build docker-run docker-demo docker-clean
 
 all: build
 
@@ -88,6 +88,11 @@ test-image: image-lib
 ## bench: build then run the benchmark suite (BENCH_REPS reps each, default 3)
 bench:
 	bash benchmark/run.sh $(BENCH_REPS)
+
+## bench-transpiler: run transpiler (Go compiler) performance benchmarks
+bench-transpiler:
+	go test -bench=Compile ./internal/compiler
+
 
 ## fmt: gofmt the Go sources
 fmt:

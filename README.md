@@ -32,6 +32,18 @@ bin/novel repl                      # interactive prompt
 
 Run `make help` for all targets.
 
+## Performance
+
+Novel's transpiler is designed to be extremely fast. Since it is written in Go, parsing, type-checking, and code generation happen in sub-millisecond times:
+
+- **Single-File Transpilation**: **~0.33 ms** (~3,000 files/sec) for Conway's Game of Life example (138 lines).
+- **End-to-End Bundling (E2E)**: **~0.80 ms** (~1,250 files/sec) including full project dependency-graph loading, parsing, type-checking, and bundling.
+
+To run the transpiler performance benchmark suite:
+```sh
+make bench-transpiler
+```
+
 ## How it fits together
 
 `internal/compiler.Compile` runs the full pipeline (lex -> parse -> type-check ->

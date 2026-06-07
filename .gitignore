@@ -29,3 +29,4 @@ editors/vscode/dist/
 /examples/NVLPATH_examples/*
 !/examples/NVLPATH_examples/.gitkeep
 *.jpg
+scratch

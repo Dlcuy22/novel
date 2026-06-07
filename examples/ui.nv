@@ -1,0 +1,109 @@
+// ui.nv: a simple X11 window manager wrapper library using FFI.
+// Used by window_demo.nv.
+
+import std.ffi as ffi
+import std.io
+
+pub type WindowWrapper struct {
+    pub display any
+    pub win     any
+}
+
+// init registers the X11 C API declarations.
+fn init() {
+    ffi.cdef("
+        typedef struct _XDisplay Display;
+        typedef unsigned long XID;
+        typedef XID Window;
+
+        typedef struct {
+            int type;
+            unsigned long serial;
+            int send_event;
+            Display *display;
+            Window window;
+        } XAnyEvent;
+
+        typedef union _XEvent {
+            int type;
+            XAnyEvent xany;
+            long pad[24];
+        } XEvent;
+
+        Display *XOpenDisplay(const char *display_name);
+        Window XDefaultRootWindow(Display *display);
+        Window XCreateSimpleWindow(Display *display, Window parent, int x, int y, unsigned int width, unsigned int height, unsigned int border_width, unsigned long border, unsigned long background);
+        int XSelectInput(Display *display, Window w, long event_mask);
+        int XMapWindow(Display *display, Window w);
+        int XNextEvent(Display *display, XEvent *event_return);
+        int XCloseDisplay(Display *display);
+    ")
+}
+
+// getLib loads the X11 shared library.
+fn getLib() any {
+    ret ffi.load("X11")
+}
+
+// createWindow initializes X11 and maps a simple window.
+pub fn createWindow(title string, width int, height int) WindowWrapper {
+    init()
+    let x11 = getLib()
+    
+    // Resolve the X11 C functions using ffi.fn.
+    let XOpenDisplay = ffi.fn(x11, "XOpenDisplay")
+    let XDefaultRootWindow = ffi.fn(x11, "XDefaultRootWindow")
+    let XCreateSimpleWindow = ffi.fn(x11, "XCreateSimpleWindow")
+    let XSelectInput = ffi.fn(x11, "XSelectInput")
+    let XMapWindow = ffi.fn(x11, "XMapWindow")
+
+    let display = XOpenDisplay(nil)
+    if display == nil {
+        io.println("Failed to open X display")
+        ret WindowWrapper{ display: nil, win: nil }
+    }
+
+    let root = XDefaultRootWindow(display)
+    // Create simple window with a dark slate background color: 0x0f172a
+    let win = XCreateSimpleWindow(display, root, 100, 100, width, height, 1, 0, 988970)
+    
+    // Select KeyPressMask (1) and ExposureMask (1L << 15 = 32768)
+    let eventMask = 32769
+    XSelectInput(display, win, eventMask)
+    
+    XMapWindow(display, win)
+    
+    ret WindowWrapper{
+        display: display,
+        win: win,
+    }
+}
+
+
+
+// Wrapper for XCloseDisplay
+fn local_close_display(display any) {
+    let x11 = getLib()
+    let XCloseDisplay = ffi.fn(x11, "XCloseDisplay")
+    XCloseDisplay(display)
+}
+
+// waitForKeypress waits for a keypress event and then closes the display.
+pub fn waitForKeypress(w WindowWrapper) {
+    let x11 = getLib()
+    let XNextEvent = ffi.fn(x11, "XNextEvent")
+    let event = ffi.new("XEvent")
+    
+    io.println("Window created successfully! Focus the window and press any key to exit.")
+    
+    for {
+        XNextEvent(w.display, event)
+        // KeyPress event type is 2; check the event type.
+        if event.type == 2 {
+            io.println("Keypress detected, shutting down...")
+            break
+        }
+    }
+    
+    local_close_display(w.display)
+}

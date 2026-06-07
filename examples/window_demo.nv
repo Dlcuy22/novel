@@ -1,0 +1,21 @@
+// window_demo.nv: demonstration of process execution and UI window creation.
+// Run with: bin/novel run examples/NVLPATH_examples/window_demo.nv
+
+import std.io
+import ui
+
+fn main() {
+    io.println("Initializing simple UI window demo using X11 FFI...")
+    
+    // Create a 400x300 window
+    let w = ui.createWindow("Novel Demo", 400, 300)
+    if w.display == nil {
+        io.println("Could not create window (X11 server not available or not running Linux)")
+        ret
+    }
+    
+    // Run loop and wait for keypress
+    ui.waitForKeypress(w)
+    
+    io.println("Window closed, demo finished.")
+}
